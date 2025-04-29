@@ -1,0 +1,154 @@
+/* 더마뷰 클라이언트 스타일시트 */
+
+/* 기본 스타일 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* 앱 컨테이너 */
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* 헤더 스타일 */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.logo h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #4361ee;
+}
+
+.main-nav ul {
+    display: flex;
+    list-style: none;
+}
+
+.main-nav ul li {
+    margin-left: 30px;
+}
+
+.main-nav ul li a {
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.main-nav ul li a:hover,
+.main-nav ul li a.active {
+    color: #4361ee;
+}
+
+/* 메인 콘텐츠 영역 */
+.main-content {
+    padding: 40px 0;
+}
+
+/* 히어로 섹션 */
+.hero-section {
+    text-align: center;
+    padding: 60px 0;
+}
+
+.hero-section h2 {
+    font-size: 36px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.hero-section p {
+    font-size: 18px;
+    margin-bottom: 30px;
+    color: #666;
+}
+
+.primary-button {
+    background-color: #4361ee;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.primary-button:hover {
+    background-color: #3a56d4;
+}
+
+/* 기능 섹션 */
+.features-section {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.feature-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    flex: 1;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+.feature-card h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.feature-card p {
+    color: #666;
+}
+
+/* 푸터 */
+.app-footer {
+    text-align: center;
+    padding: 20px 0;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+    .features-section {
+        flex-direction: column;
+    }
+    
+    .main-nav {
+        display: none; /* 모바일에서는 메뉴 숨김 - 실제로는 햄버거 메뉴로 대체 */
+    }
+}
