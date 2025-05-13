@@ -2,6 +2,7 @@ import { useAtom } from 'jotai';
 import { useCallback } from 'react';
 import { ipcRenderer } from 'electron';
 import { settingsAtom } from '../atoms/states';
+import { authApi } from '../api/authApi';
 
 const BASE_URL = 'http://localhost:8080';
 
@@ -31,30 +32,14 @@ export function useAuth() {
   // 회원가입 함수
   const signUp = useCallback(async (userData: SignUpRequest) => {
     try {
-      const signUpData = {
-        id: 1,
-        userId: userData.userId,
-        password: userData.password,
-        email: userData.email,
-        phone: userData.phone,
-        refreshToken: "1"
-      };
+      ipcRenderer.send('console-log', '회원가입 요청 데이터: ' + JSON.stringify(userData));
       
-      ipcRenderer.send('console-log', '회원가입 요청 데이터: ' + JSON.stringify(signUpData));
-      
-      // 메인 프로세스를 통해 HTTP 요청
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'post',
-        url: `${BASE_URL}/auth/signUp`,
-        data: signUpData,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // API 모듈을 통해 회원가입 요청
+      const response = await authApi.signUp(userData);
       
       ipcRenderer.send('console-log', '회원가입 응답: ' + JSON.stringify(response));
       
-      if (!response.error && (response.status === 200 || response.status === 201)) {
+      if (response && response.statusCode === 200) {
         return true;
       } else {
         return false;
@@ -70,86 +55,43 @@ export function useAuth() {
     try {
       ipcRenderer.send('console-log', '로그인 요청 데이터: ' + JSON.stringify(credentials));
       
-      // 메인 프로세스를 통해 HTTP 요청
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'post',
-        url: `${BASE_URL}/auth/signIn`,
-        data: credentials,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // API 모듈을 통해 로그인 요청
+      const response = await authApi.signIn(credentials);
       
       ipcRenderer.send('console-log', '로그인 응답: ' + JSON.stringify(response));
       
-      if (!response.error && (response.status === 200 || response.status === 201)) {
-        // 응답 데이터가 토큰 문자열인 경우
-        if (typeof response.data === 'string') {
-          // 토큰 저장
-          localStorage.setItem('access_token', response.data);
+      if (response && response.statusCode === 200) {
+        const authData = response.data;
+        
+        // 액세스 토큰 저장
+        if (authData.accessToken) {
+          localStorage.setItem('access_token', authData.accessToken);
           
           // 메인 프로세스에 토큰 전달
-          ipcRenderer.send('set-access-token', { token: response.data });
-          ipcRenderer.send('console-log', '토큰 메인 프로세스로 전달됨(문자열): ' + response.data.substring(0, 10) + '...');
-          
-          // settings 업데이트
-          if (settings) {
-            const newSettings = {
-              ...settings,
-              userContext: {
-                name: credentials.userId,
-                role: 'user',
-                lastActive: new Date(),
-              },
-              userLastActive: new Date(),
-            };
-            setSettings(newSettings);
-          }
-          
-          return true;
+          ipcRenderer.send('set-access-token', { token: authData.accessToken });
+          ipcRenderer.send('console-log', '토큰 메인 프로세스로 전달됨: ' + authData.accessToken.substring(0, 10) + '...');
         }
-        // 응답 데이터가 객체인 경우 (토큰 포함)
-        else if (response.data && typeof response.data === 'object') {
-          let accessToken = '';
-          
-          // API 응답 구조에 따라 토큰 추출
-          if (response.data.accessToken) {
-            accessToken = response.data.accessToken;
-            localStorage.setItem('access_token', accessToken);
-          } else if (response.data.data && response.data.data.accessToken) {
-            accessToken = response.data.data.accessToken;
-            localStorage.setItem('access_token', accessToken);
-          }
-          
-          // 메인 프로세스에 토큰 전달
-          if (accessToken) {
-            ipcRenderer.send('set-access-token', { token: accessToken });
-            ipcRenderer.send('console-log', '토큰 메인 프로세스로 전달됨(객체): ' + accessToken.substring(0, 10) + '...');
-          }
-          
-          // 리프레시 토큰 처리
-          if (response.data.refreshToken) {
-            localStorage.setItem('refresh_token', response.data.refreshToken);
-          } else if (response.data.data && response.data.data.refreshToken) {
-            localStorage.setItem('refresh_token', response.data.data.refreshToken);
-          }
-          
-          // settings 업데이트
-          if (settings) {
-            const newSettings = {
-              ...settings,
-              userContext: {
-                name: credentials.userId,
-                role: 'user',
-                lastActive: new Date(),
-              },
-              userLastActive: new Date(),
-            };
-            setSettings(newSettings);
-          }
-          
-          return true;
+        
+        // 리프레시 토큰 저장
+        if (authData.refreshToken) {
+          localStorage.setItem('refresh_token', authData.refreshToken);
         }
+        
+        // settings 업데이트
+        if (settings) {
+          const newSettings = {
+            ...settings,
+            userContext: {
+              name: credentials.userId,
+              role: 'user',
+              lastActive: new Date(),
+            },
+            userLastActive: new Date(),
+          };
+          setSettings(newSettings);
+        }
+        
+        return true;
       }
       
       return false;
@@ -172,40 +114,26 @@ export function useAuth() {
       
       ipcRenderer.send('console-log', '토큰 갱신 요청');
       
-      // 메인 프로세스를 통해 HTTP 요청
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'post',
-        url: `${BASE_URL}/auth/token/refresh`,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // API 모듈을 통해 토큰 갱신 요청
+      const response = await authApi.refreshToken();
       
       ipcRenderer.send('console-log', '토큰 갱신 응답: ' + JSON.stringify(response));
       
-      if (!response.error && (response.status === 200 || response.status === 201)) {
-        let accessToken = '';
+      if (response && response.statusCode === 200 && response.data) {
+        const authData = response.data;
         
-        if (typeof response.data === 'object') {
-          if (response.data.accessToken) {
-            accessToken = response.data.accessToken;
-          } else if (response.data.data && response.data.data.accessToken) {
-            accessToken = response.data.data.accessToken;
-          }
+        if (authData.accessToken) {
+          localStorage.setItem('access_token', authData.accessToken);
           
-          if (accessToken) {
-            localStorage.setItem('access_token', accessToken);
-            
-            // 메인 프로세스에 토큰 전달
-            ipcRenderer.send('set-access-token', { token: accessToken });
-            ipcRenderer.send('console-log', '갱신된 토큰 메인 프로세스로 전달됨: ' + accessToken.substring(0, 10) + '...');
-            
-            return true;
-          }
+          // 메인 프로세스에 토큰 전달
+          ipcRenderer.send('set-access-token', { token: authData.accessToken });
+          ipcRenderer.send('console-log', '갱신된 토큰 메인 프로세스로 전달됨: ' + authData.accessToken.substring(0, 10) + '...');
+          
+          return true;
         }
       }
       
-      // 토큰 갱신 실패 시 처리 (수정된 부분)
+      // 토큰 갱신 실패 시 처리
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       ipcRenderer.send('set-access-token', { token: '' });
@@ -214,7 +142,7 @@ export function useAuth() {
     } catch (error) {
       ipcRenderer.send('console-log', '토큰 갱신 오류: ' + (error instanceof Error ? error.message : String(error)));
       
-      // 오류 발생 시 토큰 삭제 및 로그인 페이지 리다이렉트 (수정된 부분)
+      // 오류 발생 시 토큰 삭제 및 로그인 페이지 리다이렉트
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       ipcRenderer.send('set-access-token', { token: '' });
@@ -229,29 +157,23 @@ export function useAuth() {
       const token = localStorage.getItem('access_token');
       
       if (!token) {
-        // 토큰이 없으면 로그인 페이지로 리다이렉트 (수정된 부분)
+        // 토큰이 없으면 로그인 페이지로 리다이렉트
         window.location.href = '/signin';
         return null;
       }
       
       ipcRenderer.send('console-log', '사용자 정보 요청');
       
-      // 메인 프로세스를 통해 HTTP 요청
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'get',
-        url: `${BASE_URL}/user/info`,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // 현재 사용자 정보 요청
+      const response = await authApi.getCurrentUser();
       
       ipcRenderer.send('console-log', '사용자 정보 응답: ' + JSON.stringify(response));
       
-      if (!response.error && (response.status === 200 || response.status === 201)) {
+      if (response && response.statusCode === 200 && response.data) {
         return response.data as UserInfo;
       }
       
-      // 사용자 정보 조회 실패 시 로그인 페이지로 리다이렉트 (수정된 부분)
+      // 사용자 정보 조회 실패 시 로그인 페이지로 리다이렉트
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       ipcRenderer.send('set-access-token', { token: '' });
@@ -260,7 +182,7 @@ export function useAuth() {
     } catch (error) {
       ipcRenderer.send('console-log', '사용자 정보 조회 오류: ' + (error instanceof Error ? error.message : String(error)));
       
-      // 오류 발생 시 토큰 삭제 및 로그인 페이지 리다이렉트 (수정된 부분)
+      // 오류 발생 시 토큰 삭제 및 로그인 페이지 리다이렉트
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       ipcRenderer.send('set-access-token', { token: '' });
@@ -270,15 +192,12 @@ export function useAuth() {
   }, []);
 
   // 로그아웃 함수
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
     try {
-      // 로컬 스토리지에서 토큰 제거
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      ipcRenderer.send('console-log', '로그아웃 요청');
       
-      // 메인 프로세스에 토큰 제거 알림
-      ipcRenderer.send('set-access-token', { token: '' });
-      ipcRenderer.send('console-log', '로그아웃: 토큰이 메인 프로세스에서 제거됨');
+      // API 모듈을 통해 로그아웃 요청
+      await authApi.signOut();
       
       // settings 업데이트
       if (settings) {
@@ -290,9 +209,19 @@ export function useAuth() {
         setSettings(newSettings);
       }
       
+      // 메인 프로세스에 토큰 제거 알림
+      ipcRenderer.send('set-access-token', { token: '' });
+      ipcRenderer.send('console-log', '로그아웃: 토큰이 메인 프로세스에서 제거됨');
+      
       return true;
     } catch (error) {
       ipcRenderer.send('console-log', '로그아웃 처리 오류: ' + (error instanceof Error ? error.message : String(error)));
+      
+      // 오류 발생 시에도 토큰 제거
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      ipcRenderer.send('set-access-token', { token: '' });
+      
       return false;
     }
   }, [settings, setSettings]);
