@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance from './axiosInstance';
 import { authApi } from './authApi';
 import { patientApi } from './patientApi';
 import { visitApi } from './visitApi';

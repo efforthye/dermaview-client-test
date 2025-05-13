@@ -9,6 +9,9 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // CORS 문제를 해결하기 위한 설정 추가
+  withCredentials: false, // 서버가 CORS를 허용하는 경우만 true로 설정
+  timeout: 10000 // 타임아웃 설정
 });
 
 // 요청 인터셉터 - 모든 요청에 Authorization 헤더 추가
@@ -66,7 +69,7 @@ axiosInstance.interceptors.response.use(
           method: 'post',
           url: `${BASE_URL}/auth/token/refresh`,
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            'Authorization': `Bearer ${localStorage.getItem('refresh_token')}`
           }
         });
         
@@ -92,7 +95,7 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         
-        // 로그인 페이지로 리다이렉트 (수정된 부분)
+        // 로그인 페이지로 리다이렉트
         window.location.href = '/signin';
         return Promise.reject(refreshError);
       }
