@@ -1,39 +1,49 @@
-import { ipcRenderer } from 'electron';
-
-const BASE_URL = 'http://localhost:8080';
+import axiosInstance from './axios';
+import { AxiosResponse } from 'axios';
+import { ApiResponse } from './authApi';
 
 export interface UserInfo {
-  id: number;
+  id?: number;
   userId: string;
   email: string;
   phone: string;
-  refreshToken: string;
+  name?: string;
+  position?: string;
 }
 
 export const userApi = {
-  getUserInfo: async (): Promise<UserInfo> => {
+  // 사용자 정보 조회
+  getUserInfo: async (): Promise<ApiResponse<UserInfo>> => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-      
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'get',
-        url: `${BASE_URL}/user/info`,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.error) {
-        throw new Error(response.message || '사용자 정보 조회 실패');
-      }
-      
+      const response: AxiosResponse<ApiResponse<UserInfo>> = await axiosInstance.get('/user/info');
       return response.data;
     } catch (error) {
       console.error('사용자 정보 조회 오류:', error);
+      throw error;
+    }
+  },
+  
+  // 사용자 정보 수정
+  updateUserInfo: async (userInfo: Partial<UserInfo>): Promise<ApiResponse<void>> => {
+    try {
+      const response: AxiosResponse<ApiResponse<void>> = await axiosInstance.post('/user/update', userInfo);
+      return response.data;
+    } catch (error) {
+      console.error('사용자 정보 수정 오류:', error);
+      throw error;
+    }
+  },
+  
+  // 비밀번호 변경
+  changePassword: async (oldPassword: string, newPassword: string): Promise<ApiResponse<void>> => {
+    try {
+      const response: AxiosResponse<ApiResponse<void>> = await axiosInstance.post('/user/change-password', {
+        oldPassword,
+        newPassword
+      });
+      return response.data;
+    } catch (error) {
+      console.error('비밀번호 변경 오류:', error);
       throw error;
     }
   }

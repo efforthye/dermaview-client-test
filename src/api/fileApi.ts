@@ -1,29 +1,29 @@
-import { ipcRenderer } from 'electron';
+import axiosInstance from './axios';
+import { AxiosResponse } from 'axios';
+import { ApiResponse } from './authApi';
 
-const BASE_URL = 'http://localhost:8080';
-
-export interface ImageInfo {
-  imgId: string;
-  visitId: string;
+export interface FileDto {
   imgUploadDate: string;
-  imgModality: string;
-  imgBodyPart: string;
+  files: File[];
+}
+
+export interface FileTempImageDto {
+  imgId: number;
+  imgUploadDate: string;
   imgOrgName: string;
   imgNewName: string;
   imgPath: string;
   thumbImgNewName: string;
   thumbImgPath: string;
-  imgRemark: string;
-  imgCluster: string;
-  imgStatus: string;
-  regUserId: string;
-  regDatetime: string;
-  modUserId: string;
-  modDatetime: string;
+  imgRemark?: string;
+  imgCluster?: string;
+  imgModality?: string;
+  imgBodyPart?: string;
+  // 기타 파일 관련 정보
 }
 
 export interface ImageUpdateOptions {
-  imgId: string;
+  imgId: number;
   imgRemark?: string;
   imgModality?: string;
   imgBodyPart?: string;
@@ -32,63 +32,14 @@ export interface ImageUpdateOptions {
 }
 
 export const fileApi = {
-  // 임시 이미지 목록 가져오기
-  getTempImageList: async (uploadDate: string): Promise<any> => {
-    try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-      
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'post',
-        url: `${BASE_URL}/file/getTempImageList?uploadDate=${uploadDate}`,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.error) {
-        throw new Error(response.message || '임시 이미지 목록 조회 실패');
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('임시 이미지 목록 조회 오류:', error);
-      throw error;
-    }
-  },
-  
   // 파일 업로드
-  uploadFiles: async (files: File[], uploadDate?: string): Promise<any> => {
+  uploadFiles: async (formData: FormData): Promise<ApiResponse<any>> => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-      
-      // 파일 정보 변환
-      const fileInfos = Array.from(files).map(file => ({
-        name: file.name,
-        path: (file as any).path, // Electron File 객체에는 path 속성이 있습니다.
-        type: file.type
-      }));
-      
-      // IPC를 통해 파일 업로드 요청
-      const response = await ipcRenderer.invoke('file-upload', {
-        url: `${BASE_URL}/file/upload`,
-        files: fileInfos,
-        uploadDate: uploadDate || new Date().toISOString().slice(0, 10).replace(/-/g, ''),
-        token
+      const response: AxiosResponse<ApiResponse<any>> = await axiosInstance.post('/file/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      
-      if (response.error) {
-        throw new Error(response.message || '파일 업로드 실패');
-      }
-      
       return response.data;
     } catch (error) {
       console.error('파일 업로드 오류:', error);
@@ -96,27 +47,23 @@ export const fileApi = {
     }
   },
   
-  // 클러스터 랜덤 배정
-  setRandomCluster: async (uploadDate: string): Promise<any> => {
+  // 미분류영상 목록 가져오기
+  getTempImageList: async (uploadDate: string): Promise<ApiResponse<Record<string, FileTempImageDto[]>>> => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-      
-      const response = await ipcRenderer.invoke('http-request', {
-        method: 'post',
-        url: `${BASE_URL}/file/setRandomCluster?uploadDate=${uploadDate}`,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.error) {
-        throw new Error(response.message || '클러스터 배정 실패');
-      }
-      
+      const response: AxiosResponse<ApiResponse<Record<string, FileTempImageDto[]>>> = 
+        await axiosInstance.post(`/file/getTempImageList?uploadDate=${uploadDate}`);
+      return response.data;
+    } catch (error) {
+      console.error('임시 이미지 목록 조회 오류:', error);
+      throw error;
+    }
+  },
+  
+  // 미분류영상 클러스터 임의 배정 (테스트용)
+  setRandomCluster: async (uploadDate: string): Promise<ApiResponse<any>> => {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = 
+        await axiosInstance.post(`/file/setRandomCluster?uploadDate=${uploadDate}`);
       return response.data;
     } catch (error) {
       console.error('클러스터 배정 오류:', error);
@@ -124,26 +71,23 @@ export const fileApi = {
     }
   },
   
-  // 이미지 정보 수정
-  updateImageInfo: async (options: ImageUpdateOptions): Promise<any> => {
+  // 파일 삭제
+  deleteFile: async (imgId: number): Promise<ApiResponse<any>> => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-      
-      // IPC를 통해 이미지 정보 수정 요청
-      const response = await ipcRenderer.invoke('update-image-info', {
-        url: BASE_URL,
-        token,
-        ...options
-      });
-      
-      if (response.error) {
-        throw new Error(response.message || '이미지 정보 수정 실패');
-      }
-      
+      const response: AxiosResponse<ApiResponse<any>> = 
+        await axiosInstance.post(`/file/deleteFile?imgId=${imgId}`);
+      return response.data;
+    } catch (error) {
+      console.error('파일 삭제 오류:', error);
+      throw error;
+    }
+  },
+  
+  // 이미지 정보 수정
+  updateImageInfo: async (options: ImageUpdateOptions): Promise<ApiResponse<any>> => {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = 
+        await axiosInstance.post('/file/updateImageInfo', options);
       return response.data;
     } catch (error) {
       console.error('이미지 정보 수정 오류:', error);
