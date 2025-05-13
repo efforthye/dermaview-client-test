@@ -260,7 +260,7 @@ export const PatientsList: React.FC = () => {
             환자번호: patient.patientRegNo,
             생년월일: patient.patientBirthDate,
             성별: patient.patientGender === 'M' ? '남성' : '여성',
-            현재나이: patient.patientBirthDate ? calculateAge(patient.patientBirthDate) : '-',
+            현재나이: calculateAge(patient.patientBirthDate || ''),
             최근촬영일자: latestVisit?.visitDate ? formatDisplayDate(latestVisit.visitDate) : '-',
             진단명: latestVisit?.visitDiagnosis || '-',
             부위및장수: '-'
@@ -309,7 +309,7 @@ export const PatientsList: React.FC = () => {
             환자번호: patient.patientRegNo,
             생년월일: patient.patientBirthDate,
             성별: patient.patientGender === 'M' ? '남성' : '여성',
-            현재나이: patient.patientBirthDate ? calculateAge(patient.patientBirthDate) : '-',
+            현재나이: calculateAge(patient.patientBirthDate || ''),
             최근촬영일자: latestVisit?.visitDate ? formatDisplayDate(latestVisit.visitDate) : '-',
             진단명: latestVisit?.visitDiagnosis || '-',
             부위및장수: '-'
@@ -577,7 +577,7 @@ export const PatientsList: React.FC = () => {
                   <td className="border border-gray-600 p-2">{patient.patientBirthDate}</td>
                   <td className="border border-gray-600 p-2">{patient.patientGender === 'M' ? '남성' : '여성'}</td>
                   <td className="border border-gray-600 p-2">
-                    {patient.patientBirthDate ? calculateAge(patient.patientBirthDate) : '-'}
+                    {calculateAge(patient.patientBirthDate || '')}
                   </td>
                   <td className="border border-gray-600 p-2">-</td>
                   <td className="border border-gray-600 p-2">-</td>
@@ -968,38 +968,64 @@ export const PatientsList: React.FC = () => {
 };
 
 // 나이 계산 함수
-const calculateAge = (birthDate: string): number => {
-  const today = new Date();
-  let birth;
-  
-  // YYMMDD 형식 처리
-  if (birthDate.length === 6) {
-    const year = parseInt(birthDate.substring(0, 2));
-    const month = parseInt(birthDate.substring(2, 4)) - 1;
-    const day = parseInt(birthDate.substring(4, 6));
+const calculateAge = (birthDate: string): string => {
+  if (!birthDate || typeof birthDate !== 'string' || birthDate.trim() === '') {
+    return '-';
+  }
+
+  try {
+    const today = new Date();
+    let birth: Date | null = null;
     
-    // 1900년대 or 2000년대 판단
-    const fullYear = year > (today.getFullYear() % 100) ? 1900 + year : 2000 + year;
-    birth = new Date(fullYear, month, day);
-  } 
-  // ISO 형식 처리 (YYYY-MM-DD)
-  else if (birthDate.includes('-')) {
-    birth = new Date(birthDate);
+    // YYMMDD 형식 처리
+    if (birthDate.length === 6) {
+      const year = parseInt(birthDate.substring(0, 2));
+      const month = parseInt(birthDate.substring(2, 4)) - 1;
+      const day = parseInt(birthDate.substring(4, 6));
+      
+      if (isNaN(year) || isNaN(month) || isNaN(day) || month < 0 || month > 11 || day < 1 || day > 31) {
+        return '-';
+      }
+      
+      // 1900년대 or 2000년대 판단
+      const fullYear = year > (today.getFullYear() % 100) ? 1900 + year : 2000 + year;
+      birth = new Date(fullYear, month, day);
+    } 
+    // ISO 형식 처리 (YYYY-MM-DD)
+    else if (birthDate.includes('-')) {
+      birth = new Date(birthDate);
+    }
+    // 기타 형식 (YYYYMMDD)
+    else if (birthDate.length === 8) {
+      const year = parseInt(birthDate.substring(0, 4));
+      const month = parseInt(birthDate.substring(4, 6)) - 1;
+      const day = parseInt(birthDate.substring(6, 8));
+      
+      if (isNaN(year) || isNaN(month) || isNaN(day) || month < 0 || month > 11 || day < 1 || day > 31) {
+        return '-';
+      }
+      
+      birth = new Date(year, month, day);
+    } else {
+      // 지원되지 않는 형식
+      return '-';
+    }
+    
+    // 유효한 날짜인지 확인
+    if (birth === null || isNaN(birth.getTime())) {
+      return '-';
+    }
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return isNaN(age) ? '-' : age.toString();
+  } catch (error) {
+    console.error('나이 계산 중 오류 발생:', error, '생년월일:', birthDate);
+    return '-';
   }
-  // 기타 형식 (YYYYMMDD)
-  else {
-    const year = parseInt(birthDate.substring(0, 4));
-    const month = parseInt(birthDate.substring(4, 6)) - 1;
-    const day = parseInt(birthDate.substring(6, 8));
-    birth = new Date(year, month, day);
-  }
-  
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  
-  return age;
 };
