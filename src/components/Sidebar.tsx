@@ -17,14 +17,14 @@ const sidebarIconStyle: CSSProperties = {
   marginLeft: 'auto',
   marginRight: 'auto',
   backgroundColor: '#1f2937', // bg-gray-800
-  color: '#3b82f6', // text-blue-500
+  color: '#b5bcd0f1', // text-blue-500 // #595F73F2
   borderRadius: '1.5rem', // rounded-3xl
   transition: 'all 300ms linear',
   cursor: 'pointer',
 };
 
 const activeIconStyle: CSSProperties = {
-  backgroundColor: '#3b82f6', // 활성화 색상을 #3b82f6으로 변경
+  backgroundColor: '#6979b1f0', // 활성화 색상을 #595F73F2으로 변경
   color: 'white',
   borderRadius: '0.75rem', // rounded-xl
 };
@@ -86,7 +86,7 @@ const SideBarIcon = ({
 
   // 원래 제공된 호버 이벤트 핸들러 사용
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.backgroundColor = '#3b82f6';
+    e.currentTarget.style.backgroundColor = '#595F73F2';
     e.currentTarget.style.color = 'white';
     e.currentTarget.style.borderRadius = '0.75rem'; // rounded-xl
   };
@@ -94,7 +94,7 @@ const SideBarIcon = ({
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!active) {
       e.currentTarget.style.backgroundColor = '#1f2937'; // bg-gray-800
-      e.currentTarget.style.color = '#3b82f6'; // text-blue-500
+      e.currentTarget.style.color = '#595F73F2'; // text-blue-500
       e.currentTarget.style.borderRadius = '1.5rem'; // rounded-3xl
     }
   };

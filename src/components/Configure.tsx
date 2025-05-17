@@ -106,7 +106,7 @@ export const Configure = () => {
                   alert('올바른 경로를 입력해주세요.');
                 }
               }}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
+              className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
             >
               Select Root Directory
             </button>
@@ -133,7 +133,7 @@ export const Configure = () => {
           </p>
           <div className={'flex-row'}>
             <button
-              className="px-4 py-2 bg-blue-500 text-amber-50 rounded ml-2 mr-2"
+              className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 ml-2 mr-2"
               onClick={() => {
                 setInputDbPath(true);
               }}
@@ -141,13 +141,13 @@ export const Configure = () => {
               리모트 경로 변경
             </button>
             <button
-              className="px-4 py-2 bg-blue-500 text-amber-50 rounded ml-2 ml-2"
+              className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 ml-2 ml-2"
               onClick={handleLogout}
             >
               로그아웃
             </button>
             <button
-              className="px-4 py-2 bg-blue-500 text-amber-50 rounded ml-2 ml-2"
+              className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 ml-2 ml-2"
               onClick={() => {
                 reset();
                 refreshSettings(null).then(() => {

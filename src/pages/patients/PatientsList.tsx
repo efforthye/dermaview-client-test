@@ -467,7 +467,7 @@ export const PatientsList: React.FC = () => {
             </div>
             <button
               type="button"
-              className="p-2 bg-blue-600 rounded"
+              className="p-2 bg-transparent border border-white text-white rounded hover:bg-white hover:bg-opacity-10"
               onClick={() => setShowAdvanced(!showAdvanced)}
             >
               Advanced
@@ -738,7 +738,7 @@ export const PatientsList: React.FC = () => {
                 <h2 className="text-lg font-bold">환자 이미지</h2>
                 {!imageLoading && selectedImageDate && patientImages[selectedImageDate] && patientImages[selectedImageDate].length > 0 && (
                   <button 
-                    className="px-3 py-1 bg-blue-600 rounded text-sm"
+                    className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                     onClick={() => {
                       // 모든 이미지 다운로드 구현
                       handleDownloadAllImages();
