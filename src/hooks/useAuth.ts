@@ -16,6 +16,8 @@ interface SignUpRequest {
   password: string;
   email: string;
   phone: string;
+  name?: string;
+  position?: string;
 }
 
 interface UserInfo {
@@ -37,6 +39,8 @@ export function useAuth() {
         password: userData.password,
         email: userData.email,
         phone: userData.phone,
+        name: userData.name || "",
+        position: userData.position || "",
         refreshToken: "1"
       };
       

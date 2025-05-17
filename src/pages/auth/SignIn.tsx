@@ -35,52 +35,59 @@ export const SignIn = () => {
   };
 
   return (
-    <div className="absolute top-0 left-0 z-10 w-[100vw] h-[100vh] bg-black bg-opacity-90 flex flex-col items-center justify-center space-y-4">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <p className="text-2xl font-bold text-center text-white">로그인</p>
+    <div className="absolute top-0 left-0 z-10 w-[100vw] h-[100vh] bg-[#1B1E2B] flex flex-col items-center justify-center">
+      <div className="bg-[#1F2235] rounded shadow-lg p-8 w-[400px] max-w-[90%]">
+        <h1 className="text-2xl font-bold text-center text-white mb-8">LOGIN</h1>
         
         {error && (
-          <div className="bg-red-500 bg-opacity-20 text-red-300 p-2 rounded text-center">
+          <div className="bg-red-500 bg-opacity-20 text-red-300 p-2 rounded text-center mb-4">
             {error}
           </div>
         )}
         
-        <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="아이디"
-          className="w-64 p-2 border rounded focus:outline-none"
-        />
+        <div className="mb-6">
+          <input
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="ID"
+            className="w-full px-3 py-3 bg-transparent border-b border-gray-500 text-white text-center focus:outline-none"
+          />
+        </div>
         
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPwd(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !loading) {
-              onSubmit();
-            }
-          }}
-          placeholder="비밀번호"
-          className="w-64 p-2 border rounded focus:outline-none"
-        />
+        <div className="mb-8">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPwd(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !loading) {
+                onSubmit();
+              }
+            }}
+            placeholder="password"
+            className="w-full px-3 py-3 bg-transparent border-b border-gray-500 text-white text-center focus:outline-none"
+          />
+        </div>
         
         <button
           onClick={onSubmit}
           disabled={loading}
-          className={`w-full px-4 py-2 bg-blue-500 text-amber-50 rounded ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className="w-full py-3 bg-transparent border border-white text-white rounded-full mb-6 hover:bg-white hover:bg-opacity-10"
         >
-          {loading ? '처리 중...' : '로그인'}
+          {loading ? '처리 중...' : 'Login'}
         </button>
         
-        <div
-          className="text-white flex justify-center items-center opacity-40 content-center mt-2 cursor-pointer hover:opacity-80"
-          onClick={() => nav('/signup')}
-        >
-          회원가입
+        <div className="flex justify-between text-gray-400 text-sm">
+          <span 
+            className="cursor-pointer hover:text-white"
+            onClick={() => nav('/signup')}
+          >
+            Create Account
+          </span>
+          <span className="cursor-pointer hover:text-white">
+            Forgot Password
+          </span>
         </div>
       </div>
     </div>
