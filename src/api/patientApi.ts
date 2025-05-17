@@ -50,7 +50,27 @@ export const patientApi = {
         throw new Error(response.message || '환자 정보 조회 실패');
       }
       
-      return response.data;
+      // 응답 객체에서 환자 목록과 전체 환자 수 추출
+      let patientList = [];
+      let totalCount = 0;
+      
+      if (response.data && response.data.data) {
+        if (response.data.data.list && Array.isArray(response.data.data.list)) {
+          patientList = response.data.data.list;
+        } else if (Array.isArray(response.data.data)) {
+          patientList = response.data.data;
+        }
+        
+        if (response.data.data.totalCount !== undefined) {
+          totalCount = response.data.data.totalCount;
+        }
+      }
+      
+      return {
+        success: true,
+        data: patientList,
+        totalCount: totalCount
+      };
     } catch (error) {
       console.error('환자 정보 조회 오류:', error);
       ipcRenderer.send('console-log', `환자 정보 조회 오류: ${error instanceof Error ? error.message : String(error)}`);

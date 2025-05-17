@@ -14,12 +14,16 @@ interface SearchParams {
   searchOperator?: 'AND' | 'OR';
   visitDateFrom?: string;
   visitDateTo?: string;
+  pageSize?: number;
+  pageCount?: number;
 }
 
 export const PatientsList: React.FC = () => {
   const [patients, setPatients] = useState<PatientInfo[]>([]);
   const [searchParams, setSearchParams] = useState<SearchParams>({
-    searchOperator: 'AND'
+    searchOperator: 'AND',
+    pageSize: 10,
+    pageCount: 0
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +42,7 @@ export const PatientsList: React.FC = () => {
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [isPatientRegisterModalOpen, setIsPatientRegisterModalOpen] = useState<boolean>(false);
   const [isVisitRegisterModalOpen, setIsVisitRegisterModalOpen] = useState<boolean>(false);
+  const [totalCount, setTotalCount] = useState<number>(0); // 전체 환자 수를 저장하기 위한 상태 추가
 
   // 환자 목록 조회
   const fetchPatients = async () => {
@@ -47,17 +52,34 @@ export const PatientsList: React.FC = () => {
       const response = await patientApi.getPatient(searchParams);
       if (response && response.success && response.data) {
         setPatients(response.data);
+        
+        // 전체 환자 수 저장 (백엔드가 totalCount를 반환하면 사용, 아니면 기본값으로 추정)
+        if (response.totalCount !== undefined) {
+          setTotalCount(response.totalCount);
+        } else {
+          // 현재 페이지에 표시된 환자 수가 pageSize보다 작으면 마지막 페이지로 간주
+          const currentPageCount = searchParams.pageCount || 0;
+          const currentPageSize = searchParams.pageSize || 10;
+          const estimatedTotal = response.data.length < currentPageSize 
+            ? currentPageCount * currentPageSize + response.data.length 
+            : (currentPageCount + 1) * currentPageSize + 1; // +1은 다음 페이지가 있을 수 있음을 의미
+          
+          setTotalCount(estimatedTotal);
+        }
+        
         // 검색 결과가 변경되면 선택 상태 초기화
         setSelectedPatients([]);
         setSelectAll(false);
       } else {
         setError('환자 정보를 가져오는데 실패했습니다.');
         setPatients([]);
+        setTotalCount(0);
       }
     } catch (err) {
       console.error('환자 조회 오류:', err);
       setError('환자 정보 조회 중 오류가 발생했습니다.');
       setPatients([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -121,8 +143,47 @@ export const PatientsList: React.FC = () => {
   // 검색 폼 제출 핸들러
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // 검색 시 첫 페이지부터 시작
+    setSearchParams({
+      ...searchParams,
+      pageCount: 0
+    });
     fetchPatients();
   };
+  
+  // 페이지 이동 함수
+  const handlePageChange = (newPage: number) => {
+    // 페이지 번호가 유효한지 확인 (0 이상이고 최대 페이지 수보다 작거나 같은지)
+    const maxPage = Math.max(0, Math.ceil(totalCount / (searchParams.pageSize || 10)) - 1);
+    if (newPage < 0 || newPage > maxPage) {
+      return; // 유효하지 않은 페이지 번호면 아무것도 하지 않음
+    }
+    
+    setSearchParams(prev => ({
+      ...prev,
+      pageCount: newPage
+    }));
+  };
+  
+  // 페이지 크기 변경 함수
+  const handlePageSizeChange = (newPageSize: number) => {
+    setSearchParams(prev => ({
+      ...prev,
+      pageSize: newPageSize,
+      pageCount: 0 // 페이지 크기가 변경되면 첫 페이지로 이동
+    }));
+  };
+  
+  // searchParams가 변경될 때마다 환자 목록 다시 조회
+  useEffect(() => {
+    // 선택된 환자 초기화
+    setSelectedPatient(null);
+    setSelectedPatients([]);
+    setSelectAll(false);
+    
+    // 환자 데이터 다시 가져오기
+    fetchPatients();
+  }, [searchParams.pageCount, searchParams.pageSize]);
 
   // 환자 선택 핸들러
   const handlePatientSelect = (patient: PatientInfo) => {
@@ -430,7 +491,18 @@ export const PatientsList: React.FC = () => {
   // 컴포넌트 마운트 시 환자 목록 조회
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, []); // 초기 로딩 시 한 번만 실행
+  
+  // 페이지네이션 관련 계산
+  const totalPages = Math.max(1, Math.ceil(totalCount / (searchParams.pageSize || 10)));
+  const currentPage = (searchParams.pageCount || 0) + 1;
+  
+  // 현재 표시 중인 환자 범위 계산
+  const startIndex = ((searchParams.pageCount || 0) * (searchParams.pageSize || 10)) + 1;
+  const endIndex = Math.min(startIndex + patients.length - 1, totalCount);
+  const patientRange = `${startIndex}-${endIndex}/${totalCount}`;
+  
+  // JSX 반환 부분 시작
 
   return (
     <div className="w-full h-full flex flex-col p-4 text-white overflow-auto">
@@ -555,7 +627,7 @@ export const PatientsList: React.FC = () => {
       {patients.length > 0 && (
         <div className="mb-2 flex justify-between items-center">
           <div className="text-sm">
-            총 <span className="font-bold">{patients.length}</span>명의 환자 중 
+            총 <span className="font-bold">{totalCount}</span>명의 환자 중 
             <span className="font-bold ml-1">{selectedPatients.length}</span>명 선택됨
           </div>
           {selectedPatients.length > 0 && (
@@ -583,8 +655,8 @@ export const PatientsList: React.FC = () => {
                 />
               </th>
               <th className="border border-gray-600 p-2">번호</th>
-              <th className="border border-gray-600 p-2">이름</th>
               <th className="border border-gray-600 p-2">환자번호</th>
+              <th className="border border-gray-600 p-2">이름</th>
               <th className="border border-gray-600 p-2">생년월일</th>
               <th className="border border-gray-600 p-2">성별</th>
               <th className="border border-gray-600 p-2">현재 나이</th>
@@ -614,8 +686,8 @@ export const PatientsList: React.FC = () => {
                     />
                   </td>
                   <td className="border border-gray-600 p-2 text-center user-select-all">{patient.patientInfoId}</td>
-                  <td className="border border-gray-600 p-2 user-select-all">{patient.patientName}</td>
                   <td className="border border-gray-600 p-2 user-select-all">{patient.patientRegNo}</td>
+                  <td className="border border-gray-600 p-2 user-select-all">{patient.patientName}</td>
                   <td className="border border-gray-600 p-2 user-select-all">{patient.patientBirthDate}</td>
                   <td className="border border-gray-600 p-2">{patient.patientGender === 'M' ? '남성' : '여성'}</td>
                   <td className="border border-gray-600 p-2">
@@ -636,6 +708,62 @@ export const PatientsList: React.FC = () => {
           </tbody>
         </table>
       </div>
+      
+      {/* 페이지네이션 */}
+      {patients.length > 0 && (
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center">
+            <span className="mr-2">페이지 크기:</span>
+            <select
+              className="p-2 rounded bg-gray-700 text-white border border-gray-600"
+              value={searchParams.pageSize || 10}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <span className="ml-4">{patientRange} 표시 중</span>
+          </div>
+          
+          <div className="flex items-center">
+            <button
+              className="px-3 py-1 bg-gray-700 text-white rounded mr-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(0)}
+              disabled={currentPage === 1}
+            >
+              &lt;&lt;
+            </button>
+            <button
+              className="px-3 py-1 bg-gray-700 text-white rounded mr-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange((searchParams.pageCount || 0) - 1)}
+              disabled={currentPage === 1}
+            >
+              &lt;
+            </button>
+            
+            <span className="mx-2">
+              페이지 {currentPage} / {totalPages}
+            </span>
+            
+            <button
+              className="px-3 py-1 bg-gray-700 text-white rounded ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange((searchParams.pageCount || 0) + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              &gt;
+            </button>
+            <button
+              className="px-3 py-1 bg-gray-700 text-white rounded ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(totalPages - 1)}
+              disabled={currentPage >= totalPages}
+            >
+              &gt;&gt;
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* 선택한 환자 정보 및 이미지 표시 */}
       {selectedPatient && (
