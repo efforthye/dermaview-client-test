@@ -415,7 +415,23 @@ export const PatientsList: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col p-4 text-white overflow-auto">
-      <h1 className="text-xl font-bold mb-4">환자 목록</h1>
+      <div className="flex justify-between mb-4">
+        <h1 className="text-xl font-bold">환자 목록</h1>
+        <div className="flex gap-2">
+          <button 
+            className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
+            onClick={() => {/* 환자 등록 기능 구현 */}}
+          >
+            환자 등록
+          </button>
+          <button 
+            className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
+            onClick={() => {/* 방문 등록 기능 구현 */}}
+          >
+            방문 등록
+          </button>
+        </div>
+      </div>
       
       {/* 검색 폼 */}
       <div className="mb-4 bg-gray-800 p-4 rounded">
@@ -456,7 +472,10 @@ export const PatientsList: React.FC = () => {
             >
               Advanced
             </button>
-            <button type="submit" className="p-2 bg-green-600 rounded">
+            <button
+              type="submit" 
+              className="p-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
+            >
               검색
             </button>
           </div>
@@ -520,11 +539,11 @@ export const PatientsList: React.FC = () => {
           </div>
           {selectedPatients.length > 0 && (
             <button 
-              className="px-2 py-1 bg-blue-600 rounded text-xs"
-              onClick={() => setSelectedPatients([])}
-            >
-              선택 초기화
-            </button>
+            className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-xs"
+            onClick={() => setSelectedPatients([])}
+          >
+            선택 초기화
+          </button>
           )}
         </div>
       )}
@@ -604,7 +623,7 @@ export const PatientsList: React.FC = () => {
               <h2 className="text-lg font-bold">환자 정보</h2>
               {!isEditingPatient ? (
                 <button 
-                  className="px-3 py-1 bg-yellow-600 rounded text-sm"
+                  className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                   onClick={handleStartEditingPatient}
                 >
                   환자 정보 수정
@@ -612,13 +631,13 @@ export const PatientsList: React.FC = () => {
               ) : (
                 <div className="flex gap-2">
                   <button 
-                    className="px-3 py-1 bg-green-600 rounded text-sm"
+                    className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                     onClick={handleSavePatientEdit}
                   >
                     저장
                   </button>
                   <button 
-                    className="px-3 py-1 bg-gray-600 rounded text-sm"
+                    className="px-3 py-1 bg-transparent border border-gray-400 text-gray-400 rounded-full hover:bg-white hover:bg-opacity-5 text-sm"
                     onClick={handleCancelEditingPatient}
                   >
                     취소
@@ -795,14 +814,14 @@ export const PatientsList: React.FC = () => {
                       </div>
                       <div className="flex gap-2">
                         <button 
-                          className="px-3 py-1 bg-blue-600 rounded text-sm"
+                          className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                           onClick={handleDownloadImage}
                         >
                           이미지 다운로드
                         </button>
                         {!selectedImage.isRepresentative && (
                           <button 
-                            className="px-3 py-1 bg-yellow-600 rounded text-sm"
+                            className="px-3 py-1 bg-transparent border border-yellow-500 text-yellow-500 rounded-full hover:bg-yellow-500 hover:bg-opacity-10 text-sm"
                             onClick={() => {
                               // 대표 이미지 설정
                               handleSetAsRepresentative();
@@ -826,7 +845,7 @@ export const PatientsList: React.FC = () => {
                   <div className="flex gap-2">
                     {!isEditingImageInfo ? (
                       <button 
-                        className="px-3 py-1 bg-yellow-600 rounded text-sm"
+                        className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                         onClick={() => {
                           setIsEditingImageInfo(true);
                           setEditedImageInfo({
@@ -841,7 +860,7 @@ export const PatientsList: React.FC = () => {
                     ) : (
                       <>
                         <button 
-                          className="px-3 py-1 bg-green-600 rounded text-sm"
+                          className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
                           onClick={() => {
                             handleUpdateImageInfo(editedImageInfo);
                             setIsEditingImageInfo(false);
@@ -850,7 +869,7 @@ export const PatientsList: React.FC = () => {
                           저장
                         </button>
                         <button 
-                          className="px-3 py-1 bg-gray-600 rounded text-sm"
+                          className="px-3 py-1 bg-transparent border border-gray-400 text-gray-400 rounded-full hover:bg-white hover:bg-opacity-5 text-sm"
                           onClick={() => {
                             setIsEditingImageInfo(false);
                             setEditedImageInfo({});
@@ -949,14 +968,14 @@ export const PatientsList: React.FC = () => {
       {/* 하단 버튼 */}
       <div className="mt-auto pt-4 flex flex-wrap justify-end gap-2">
         <button 
-          className="px-4 py-2 bg-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleExportAllExcel}
           disabled={patients.length === 0}
         >
           검색결과 저장
         </button>
         <button 
-          className="px-4 py-2 bg-green-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleExportSelectedExcel}
           disabled={selectedPatients.length === 0}
         >

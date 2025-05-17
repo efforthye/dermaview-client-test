@@ -1129,33 +1129,10 @@ export const ExplorerContent = ({ filePath, userContext }: ExplorerContentProps)
                   onChange={(e) => setQueryString(e.target.value)}
                 />
                 <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md"
+                  className="bg-transparent hover:bg-white hover:bg-opacity-10 text-white px-4 py-2 border border-white rounded-r-md ml-[10px]"
                   onClick={handleSearch}
                 >
                   검색
-                </button>
-              </div>
-              
-              {/* 환자 관리 버튼 */}
-              <div className="ml-4 flex items-center space-x-2">
-                <button
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm"
-                  onClick={showPatientRegistration}
-                >
-                  환자 등록
-                </button>
-                
-                {/* <button
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-md text-sm"
-                  onClick={showPatientEdit}
-                >
-                  환자 수정
-                </button> */}
-                <button
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-md text-sm"
-                  onClick={showVisitRegistration}
-                >
-                  방문 등록
                 </button>
               </div>
             </div>
