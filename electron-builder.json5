@@ -9,14 +9,16 @@
   },
   "files": [
     "dist",
-    "dist-electron"
+    "dist-electron",
+    "public"
   ],
   "mac": {
     "target": [
       "dir"
     ],
     "artifactName": "${productName}-Mac-${version}.${ext}",
-    "icon": "build/icon.png"
+    "icon": "build/icon.png",
+    "identity": null
   },
   "win": {
     "target": [

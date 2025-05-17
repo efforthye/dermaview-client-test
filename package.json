@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "build:simple": "vite build --emptyOutDir --mode production && electron-builder --dir --mac",
+    "build:withicon": "vite build --emptyOutDir --mode production && electron-builder --dir --mac --config.mac.icon=./public/dermaview_logo.png",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "start": "electron-forge start",

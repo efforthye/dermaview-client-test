@@ -73495,6 +73495,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT
 let win;
 function createWindow() {
   win = new BrowserWindow({
+    icon: path$1.join(process.env.VITE_PUBLIC, "dermaview_logo.png"),
     width: 1200,
     height: 800,
     webPreferences: {

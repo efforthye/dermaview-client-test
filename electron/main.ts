@@ -27,6 +27,7 @@ let win: BrowserWindow | null;
 
 function createWindow() {
   win = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, 'dermaview_logo.png'),
     width: 1200,
     height: 800,
     webPreferences: {
