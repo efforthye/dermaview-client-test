@@ -27,7 +27,6 @@ let win: BrowserWindow | null;
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'dermaview-icon.svg'),
     width: 1200,
     height: 800,
     webPreferences: {
@@ -37,6 +36,7 @@ function createWindow() {
       webSecurity: false,
       allowRunningInsecureContent: false,
     },
+    title: 'Dermaview'
   });
 
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -94,6 +94,9 @@ app.on('activate', () => {
 
 app.whenReady().then(() => {
   createWindow();
+  
+  // 앱 이름 설정
+  app.name = 'Dermaview';
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

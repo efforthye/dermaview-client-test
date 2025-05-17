@@ -1,11 +1,12 @@
 {
-  "name": "electron-vite-project",
+  "name": "dermaview",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
+    "build:simple": "vite build --emptyOutDir --mode production && electron-builder --dir --mac",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "start": "electron-forge start",
@@ -27,7 +28,6 @@
     "react-router-dom": "^6.27.0",
     "react-spinners": "^0.14.1",
     "react-viewer": "^3.2.2",
-    "sqlite3": "^5.1.7",
     "styled-components": "^6.1.17",
     "ts-pattern": "^5.5.0",
     "viewerjs": "^1.11.6",

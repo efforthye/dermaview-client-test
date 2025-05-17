@@ -73495,7 +73495,6 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT
 let win;
 function createWindow() {
   win = new BrowserWindow({
-    icon: path$1.join(process.env.VITE_PUBLIC, "dermaview-icon.svg"),
     width: 1200,
     height: 800,
     webPreferences: {
@@ -73504,7 +73503,8 @@ function createWindow() {
       contextIsolation: false,
       webSecurity: false,
       allowRunningInsecureContent: false
-    }
+    },
+    title: "Dermaview"
   });
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
@@ -73550,6 +73550,7 @@ app.on("activate", () => {
 });
 app.whenReady().then(() => {
   createWindow();
+  app.name = "Dermaview";
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

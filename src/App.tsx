@@ -61,7 +61,10 @@ export default function App() {
         window.location.href = '/signin';
       }
     }
-    setLoading(false);
+    // 로딩 화면을 좀 더 오래 표시하기 위한 인위적인 지연 (테스트용)
+    setTimeout(() => {
+      setLoading(false);
+    }, 2500); // 2.5초 지연
   };
 
   checkAuth();
@@ -93,8 +96,16 @@ export default function App() {
   // 로딩 중일 때 표시
   if (loading) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
-        <p>로딩 중...</p>
+      <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#1B1E2B]">
+        <div className="flex flex-col items-center justify-center">
+          {/* Dermaview 로고 */}
+          <div className="logo-animation">
+            <img src="/dermaview_logo.png" width="150" height="150" alt="Dermaview Logo" />
+          </div>
+          
+          {/* Dermaview 텍스트 */}
+          <h1 className="mt-6 text-[#FFFFFF] text-[80px] font-['KoHo'] font-medium tracking-wider text-animation">DERMAVIEW</h1>
+        </div>
       </div>
     );
   }
