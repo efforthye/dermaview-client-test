@@ -667,12 +667,9 @@ export const PatientsList: React.FC = () => {
               <div className="flex flex-col">
                 <label className="text-sm mb-1">번호</label>
                 {isEditingPatient ? (
-                  <input
-                    type="text"
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.patientInfoId || ''}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, patientInfoId: e.target.value})}
-                  />
+                  <div className="p-2 bg-gray-800 rounded user-select-all text-gray-300">
+                    {selectedPatient.patientInfoId}
+                  </div>
                 ) : (
                   <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.patientInfoId}
@@ -717,7 +714,7 @@ export const PatientsList: React.FC = () => {
                   <input
                     type="date"
                     className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.patientBirthDate || ''}
+                    value={formatDateForInput(editedPatientData.patientBirthDate || '')}
                     onChange={(e) => setEditedPatientData({...editedPatientData, patientBirthDate: e.target.value})}
                   />
                 ) : (
@@ -1016,6 +1013,36 @@ export const PatientsList: React.FC = () => {
       </div>
     </div>
   );
+};
+
+// date 입력 필드를 위한 날짜 포맷 함수
+const formatDateForInput = (dateStr: string): string => {
+  if (!dateStr) return '';
+  
+  // YYYY-MM-DD 형식이면 그대로 반환
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  
+  // YYYYMMDD 형식이면 YYYY-MM-DD로 변환
+  if (/^\d{8}$/.test(dateStr)) {
+    return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+  }
+  
+  // YYMMDD 형식이면 20YY-MM-DD 또는 19YY-MM-DD로 변환
+  if (/^\d{6}$/.test(dateStr)) {
+    const year = dateStr.substring(0, 2);
+    const month = dateStr.substring(2, 4);
+    const day = dateStr.substring(4, 6);
+    
+    // 연도에 대한 세기 추정 (현재 20년 기준으로 이전은 1900년대, 이후는 2000년대)
+    const currentYear = new Date().getFullYear() % 100;
+    const fullYear = parseInt(year) > currentYear ? `19${year}` : `20${year}`;
+    
+    return `${fullYear}-${month}-${day}`;
+  }
+  
+  return dateStr;
 };
 
 // 나이 계산 함수
