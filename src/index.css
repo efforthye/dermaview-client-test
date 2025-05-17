@@ -40,6 +40,14 @@
   .scrollbar::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
+  
+  /* 선택 영역 복사 가능하게 하는 클래스 */
+  .user-select-all {
+    user-select: all;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: all;
+  }
 
   @keyframes spin {
     0% {

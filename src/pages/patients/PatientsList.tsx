@@ -122,11 +122,24 @@ export const PatientsList: React.FC = () => {
 
   // 환자 선택 핸들러
   const handlePatientSelect = (patient: PatientInfo) => {
-    setSelectedPatient(patient);
-    setIsEditingPatient(false);
-    setEditedPatientData({});
-    if (patient.patientInfoId) {
-      fetchPatientImages(patient.patientInfoId);
+    // 이미 선택된 환자를 다시 클릭한 경우 접기
+    if (selectedPatient?.patientInfoId === patient.patientInfoId) {
+      setSelectedPatient(null); // 선택 해제
+      // 관련 상태 초기화
+      setIsEditingPatient(false);
+      setEditedPatientData({});
+      setPatientImages({});
+      setImageDates([]);
+      setSelectedImageDate(null);
+      setSelectedImage(null);
+    } else {
+      // 새로운 환자 선택
+      setSelectedPatient(patient);
+      setIsEditingPatient(false);
+      setEditedPatientData({});
+      if (patient.patientInfoId) {
+        fetchPatientImages(patient.patientInfoId);
+      }
     }
   };
 
@@ -256,6 +269,7 @@ export const PatientsList: React.FC = () => {
           const latestVisit = visits.length > 0 ? visits[0] : null;
           
           return {
+            번호: patient.patientInfoId,
             이름: patient.patientName,
             환자번호: patient.patientRegNo,
             생년월일: patient.patientBirthDate,
@@ -305,6 +319,7 @@ export const PatientsList: React.FC = () => {
           const latestVisit = visits.length > 0 ? visits[0] : null;
           
           return {
+            번호: patient.patientInfoId,
             이름: patient.patientName,
             환자번호: patient.patientRegNo,
             생년월일: patient.patientBirthDate,
@@ -561,6 +576,7 @@ export const PatientsList: React.FC = () => {
                   className="cursor-pointer"
                 />
               </th>
+              <th className="border border-gray-600 p-2">번호</th>
               <th className="border border-gray-600 p-2">이름</th>
               <th className="border border-gray-600 p-2">환자번호</th>
               <th className="border border-gray-600 p-2">생년월일</th>
@@ -591,9 +607,10 @@ export const PatientsList: React.FC = () => {
                       className="cursor-pointer"
                     />
                   </td>
-                  <td className="border border-gray-600 p-2">{patient.patientName}</td>
-                  <td className="border border-gray-600 p-2">{patient.patientRegNo}</td>
-                  <td className="border border-gray-600 p-2">{patient.patientBirthDate}</td>
+                  <td className="border border-gray-600 p-2 text-center user-select-all">{patient.patientInfoId}</td>
+                  <td className="border border-gray-600 p-2 user-select-all">{patient.patientName}</td>
+                  <td className="border border-gray-600 p-2 user-select-all">{patient.patientRegNo}</td>
+                  <td className="border border-gray-600 p-2 user-select-all">{patient.patientBirthDate}</td>
                   <td className="border border-gray-600 p-2">{patient.patientGender === 'M' ? '남성' : '여성'}</td>
                   <td className="border border-gray-600 p-2">
                     {calculateAge(patient.patientBirthDate || '')}
@@ -648,6 +665,21 @@ export const PatientsList: React.FC = () => {
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="flex flex-col">
+                <label className="text-sm mb-1">번호</label>
+                {isEditingPatient ? (
+                  <input
+                    type="text"
+                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
+                    value={editedPatientData.patientInfoId || ''}
+                    onChange={(e) => setEditedPatientData({...editedPatientData, patientInfoId: e.target.value})}
+                  />
+                ) : (
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
+                    {selectedPatient.patientInfoId}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col">
                 <label className="text-sm mb-1">이름</label>
                 {isEditingPatient ? (
                   <input
@@ -657,7 +689,7 @@ export const PatientsList: React.FC = () => {
                     onChange={(e) => setEditedPatientData({...editedPatientData, patientName: e.target.value})}
                   />
                 ) : (
-                  <div className="p-2 bg-gray-700 rounded">
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.patientName}
                   </div>
                 )}
@@ -673,7 +705,7 @@ export const PatientsList: React.FC = () => {
                     onChange={(e) => setEditedPatientData({...editedPatientData, patientRegNo: e.target.value})}
                   />
                 ) : (
-                  <div className="p-2 bg-gray-700 rounded">
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.patientRegNo}
                   </div>
                 )}
@@ -689,7 +721,7 @@ export const PatientsList: React.FC = () => {
                     onChange={(e) => setEditedPatientData({...editedPatientData, patientBirthDate: e.target.value})}
                   />
                 ) : (
-                  <div className="p-2 bg-gray-700 rounded">
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.patientBirthDate}
                   </div>
                 )}
@@ -707,7 +739,7 @@ export const PatientsList: React.FC = () => {
                     <option value="F">여성</option>
                   </select>
                 ) : (
-                  <div className="p-2 bg-gray-700 rounded">
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.patientGender === 'M' ? '남성' : '여성'}
                   </div>
                 )}
@@ -723,7 +755,7 @@ export const PatientsList: React.FC = () => {
                     onChange={(e) => setEditedPatientData({...editedPatientData, doctor: e.target.value})}
                   />
                 ) : (
-                  <div className="p-2 bg-gray-700 rounded">
+                  <div className="p-2 bg-gray-700 rounded user-select-all">
                     {selectedPatient.doctor || '지정되지 않음'}
                   </div>
                 )}
