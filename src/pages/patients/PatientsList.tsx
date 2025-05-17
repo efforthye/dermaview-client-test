@@ -4,6 +4,8 @@ import { visitApi } from '../../api/visitApi';
 import { formatDisplayDate } from '../explorer/Explorer';
 import { ipcRenderer } from 'electron';
 import { IPC_CALLS } from '../../IPC_CALLS';
+import PatientRegisterModal from '../../components/modals/PatientRegisterModal';
+import VisitRegisterModal from '../../components/modals/VisitRegisterModal';
 
 interface SearchParams {
   patientRegNo?: string;
@@ -34,6 +36,8 @@ export const PatientsList: React.FC = () => {
   const [editedImageInfo, setEditedImageInfo] = useState<Partial<any>>({});
   const [selectedPatients, setSelectedPatients] = useState<PatientInfo[]>([]);
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  const [isPatientRegisterModalOpen, setIsPatientRegisterModalOpen] = useState<boolean>(false);
+  const [isVisitRegisterModalOpen, setIsVisitRegisterModalOpen] = useState<boolean>(false);
 
   // 환자 목록 조회
   const fetchPatients = async () => {
@@ -435,13 +439,15 @@ export const PatientsList: React.FC = () => {
         <div className="flex gap-2">
           <button 
             className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
-            onClick={() => {/* 환자 등록 기능 구현 */}}
+            onClick={() => setIsPatientRegisterModalOpen(true)}
           >
             환자 등록
           </button>
           <button 
             className="px-4 py-2 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10"
-            onClick={() => {/* 방문 등록 기능 구현 */}}
+            onClick={() => setIsVisitRegisterModalOpen(true)}
+            disabled={!selectedPatient}
+            title={!selectedPatient ? "환자를 먼저 선택해주세요" : ""}
           >
             방문 등록
           </button>
@@ -1011,6 +1017,21 @@ export const PatientsList: React.FC = () => {
           선택항목 저장
         </button>
       </div>
+      
+      {/* 환자 등록 모달 */}
+      <PatientRegisterModal
+        isOpen={isPatientRegisterModalOpen}
+        onClose={() => setIsPatientRegisterModalOpen(false)}
+        onSuccess={fetchPatients}
+      />
+      
+      {/* 방문 등록 모달 */}
+      <VisitRegisterModal
+        isOpen={isVisitRegisterModalOpen}
+        onClose={() => setIsVisitRegisterModalOpen(false)}
+        onSuccess={fetchPatients}
+        patient={selectedPatient}
+      />
     </div>
   );
 };

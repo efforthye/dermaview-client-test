@@ -67,7 +67,22 @@ export const patientApi = {
         throw new Error('인증 토큰이 없습니다.');
       }
       
-      ipcRenderer.send('console-log', `환자 정보 등록 요청 데이터: ${JSON.stringify(patientInfo)}`);
+      // 다양한 소스에서 사용자 ID 조회 시도
+      const userIdNum = localStorage.getItem('userIdNum');
+      const userId = localStorage.getItem('userId');
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      
+      // 백엔드에서 기대하는 형식에 맞게 데이터 준비
+      // 백엔드에서 REG_USER_ID 필드가 필요하므로 여러 형태로 시도
+      const requestData = {
+        ...patientInfo,
+        // 다양한 필드 이름으로 시도 (백엔드 요구사항에 맞추기)
+        regUserId: patientInfo.regUserId || userIdNum || userId || (userInfo.id?.toString()) || '1',
+        REG_USER_ID: patientInfo.regUserId || userIdNum || userId || (userInfo.id?.toString()) || '1',
+        reg_user_id: patientInfo.regUserId || userIdNum || userId || (userInfo.id?.toString()) || '1'
+      };
+      
+      ipcRenderer.send('console-log', `환자 정보 등록 요청 데이터: ${JSON.stringify(requestData)}`);
       
       const response = await ipcRenderer.invoke('http-request', {
         method: 'post',
@@ -76,7 +91,7 @@ export const patientApi = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        data: patientInfo
+        data: requestData
       });
       
       ipcRenderer.send('console-log', `환자 정보 등록 응답: ${JSON.stringify(response)}`);
@@ -106,7 +121,17 @@ export const patientApi = {
         throw new Error('환자 ID가 필요합니다.');
       }
       
-      ipcRenderer.send('console-log', `환자 정보 수정 요청 데이터: ${JSON.stringify(patientInfo)}`);
+      // 로컬 스토리지에서 사용자 정보 가져오기
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      const userId = localStorage.getItem('userId') || userInfo.userId || '';
+      
+      // 명시적으로 modUserId 추가
+      const requestData = {
+        ...patientInfo,
+        modUserId: userId || '1234' // 기본값으로 '1234' 설정 (테스트용)
+      };
+      
+      ipcRenderer.send('console-log', `환자 정보 수정 요청 데이터: ${JSON.stringify(requestData)}`);
       
       const response = await ipcRenderer.invoke('http-request', {
         method: 'post',
@@ -115,7 +140,7 @@ export const patientApi = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        data: patientInfo
+        data: requestData
       });
       
       ipcRenderer.send('console-log', `환자 정보 수정 응답: ${JSON.stringify(response)}`);

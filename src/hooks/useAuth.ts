@@ -87,6 +87,9 @@ export function useAuth() {
       ipcRenderer.send('console-log', '로그인 응답: ' + JSON.stringify(response));
       
       if (!response.error && (response.status === 200 || response.status === 201)) {
+        // 사용자 ID 저장
+        localStorage.setItem('userId', credentials.userId);
+        
         // 응답 데이터가 토큰 문자열인 경우
         if (typeof response.data === 'string') {
           // 토큰 저장
@@ -109,6 +112,9 @@ export function useAuth() {
             };
             setSettings(newSettings);
           }
+          
+          // 사용자 정보 조회 호출
+          getUserInfo();
           
           return true;
         }
@@ -151,6 +157,9 @@ export function useAuth() {
             };
             setSettings(newSettings);
           }
+          
+          // 사용자 정보 조회 호출
+          getUserInfo();
           
           return true;
         }
@@ -251,22 +260,62 @@ export function useAuth() {
       
       ipcRenderer.send('console-log', '사용자 정보 응답: ' + JSON.stringify(response));
       
-      if (!response.error && (response.status === 200 || response.status === 201)) {
-        return response.data as UserInfo;
+      if (!response.error && response.status === 200 && response.data) {
+        // 메인 프로세스에 토큰 전달 (재확인)
+        ipcRenderer.send('set-access-token', { token });
+        
+        let userInfo = null;
+        
+        // API 응답 형식에 따라 데이터 추출
+        if (typeof response.data === 'object') {
+          // 데이터가 직접 반환되는 경우
+          userInfo = response.data;
+        } else if (response.data && response.data.data) {
+          // 데이터가 중첩된 형식으로 반환되는 경우
+          userInfo = response.data.data;
+        }
+        
+        // 사용자 정보를 로컬 스토리지에 저장
+        if (userInfo) {
+          // userId 저장
+          if (userInfo.userId) {
+            localStorage.setItem('userId', userInfo.userId);
+          }
+          
+          // id 값(숫자) 저장 - 이것이 regUserId로 사용될 수 있음
+          if (userInfo.id) {
+            localStorage.setItem('userIdNum', String(userInfo.id));
+          }
+          
+          // 전체 사용자 정보 객체 저장
+          localStorage.setItem('userInfo', JSON.stringify(userInfo));
+          
+          ipcRenderer.send('console-log', '사용자 정보가 로컬 스토리지에 저장됨');
+          
+          return userInfo;
+        }
       }
       
       // 사용자 정보 조회 실패 시 로그인 페이지로 리다이렉트
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userIdNum');
+      localStorage.removeItem('userInfo');
       ipcRenderer.send('set-access-token', { token: '' });
       window.location.href = '/signin';
+      
+      // 응답은 성공이지만 데이터가 없는 경우
       return null;
     } catch (error) {
       ipcRenderer.send('console-log', '사용자 정보 조회 오류: ' + (error instanceof Error ? error.message : String(error)));
-      
+
       // 오류 발생 시 토큰 삭제 및 로그인 페이지 리다이렉트
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userIdNum');
+      localStorage.removeItem('userInfo');
       ipcRenderer.send('set-access-token', { token: '' });
       window.location.href = '/signin';
       return null;
@@ -276,9 +325,12 @@ export function useAuth() {
   // 로그아웃 함수
   const signOut = useCallback(() => {
     try {
-      // 로컬 스토리지에서 토큰 제거
+      // 로컬 스토리지에서 토큰 및 사용자 정보 제거
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userIdNum');
+      localStorage.removeItem('userInfo');
       
       // 메인 프로세스에 토큰 제거 알림
       ipcRenderer.send('set-access-token', { token: '' });

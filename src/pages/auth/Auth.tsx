@@ -34,6 +34,10 @@ export const Auth = () => {
         // 토큰 확인 및 사용자 정보 조회
         const token = localStorage.getItem('access_token');
         if (token) {
+          // 토큰이 존재하면 메인 프로세스에 전달 (추가된 부분)
+          ipcRenderer.send('set-access-token', { token });
+          console.log('액세스 토큰이 메인 프로세스로 전달됨');
+          
           const userInfo = await getUserInfo();
           if (userInfo) {
             // 사용자 정보가 유효하면 홈으로

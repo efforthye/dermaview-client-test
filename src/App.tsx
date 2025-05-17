@@ -23,52 +23,74 @@ export default function App() {
   // 토큰 유효성 확인 및 사용자 정보 가져오기
   useEffect(() => {
     const checkAuth = async () => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
       try {
-        const userInfo = await getUserInfo();
-        if (userInfo && settings) {
-          // 사용자 정보가 유효하면 settings 업데이트
-          const newSettings = {
-            ...settings,
-            userContext: {
-              name: userInfo.userId,
-              role: 'user',
-              lastActive: new Date(),
-            },
-            userLastActive: new Date(),
-          };
-          setSettings(newSettings);
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          // 토큰이 존재하면 메인 프로세스에 전달 (추가된 부분)
+          ipcRenderer.send('set-access-token', { token });
+          console.log('액세스 토큰이 메인 프로세스로 전달됨');
+          
+          try {
+            const userInfo = await getUserInfo();
+            if (userInfo && settings) {
+              // 사용자 정보가 유효하면 settings 업데이트
+              const newSettings = {
+                ...settings,
+                userContext: {
+                  name: userInfo.userId,
+                  role: 'user',
+                  lastActive: new Date(),
+                },
+                userLastActive: new Date(),
+              };
+              setSettings(newSettings);
+              console.log('사용자 인증 정보 확인 완료, 자동 로그인 성공');
+            } else {
+              // 유효한 사용자 정보가 없으면 로그인 페이지로 리다이렉트
+              console.log('사용자 정보 가져오기 실패, 로그인 페이지로 이동');
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('refresh_token');
+              
+              const currentPath = window.location.pathname;
+              const nonAuthPaths = ['/signin', '/signup', '/auth', '/initial-launch'];
+              if (!nonAuthPaths.includes(currentPath)) {
+                window.location.href = '/signin';
+              }
+            }
+          } catch (error) {
+            console.error('인증 확인 오류:', error);
+            // 인증 오류 발생 시 로그인 페이지로 리다이렉트
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            
+            const currentPath = window.location.pathname;
+            const nonAuthPaths = ['/signin', '/signup', '/auth', '/initial-launch'];
+            if (!nonAuthPaths.includes(currentPath)) {
+              window.location.href = '/signin';
+            }
+          }
         } else {
-          // 유효한 사용자 정보가 없으면 로그인 페이지로 리다이렉트 (수정된 부분)
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/signin';
+          // 토큰이 없으면 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 관련 페이지가 아닌 경우)
+          const nonAuthPaths = ['/signin', '/signup', '/auth', '/initial-launch'];
+          const currentPath = window.location.pathname;
+          
+          if (!nonAuthPaths.includes(currentPath)) {
+            console.log('토큰 없음, 로그인 페이지로 이동');
+            window.location.href = '/signin';
+          }
         }
       } catch (error) {
-        console.error('인증 확인 오류:', error);
-        // 인증 오류 발생 시 로그인 페이지로 리다이렉트 (수정된 부분)
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/signin';
+        console.error('인증 체크 과정에서 오류 발생:', error);
       }
-    } else {
-      // 토큰이 없으면 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 관련 페이지가 아닌 경우)
-      const nonAuthPaths = ['/signin', '/signup', '/auth'];
-      const currentPath = window.location.pathname;
       
-      if (!nonAuthPaths.includes(currentPath)) {
-        window.location.href = '/signin';
-      }
-    }
-    // 로딩 화면을 좀 더 오래 표시하기 위한 인위적인 지연 (테스트용)
-    setTimeout(() => {
-      setLoading(false);
-    }, 2500); // 2.5초 지연
-  };
+      // 로딩 화면을 좀 더 오래 표시하기 위한 인위적인 지연 (테스트용)
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000); // 1초 지연으로 변경
+    };
 
-  checkAuth();
-}, []);
+    checkAuth();
+  }, []);
 
   // settings 관리
   useEffect(() => {
