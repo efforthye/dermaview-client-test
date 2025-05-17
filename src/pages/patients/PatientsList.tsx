@@ -6,6 +6,7 @@ import { ipcRenderer } from 'electron';
 import { IPC_CALLS } from '../../IPC_CALLS';
 import PatientRegisterModal from '../../components/modals/PatientRegisterModal';
 import VisitRegisterModal from '../../components/modals/VisitRegisterModal';
+import PatientDetailsModal from '../../components/modals/PatientDetailsModal';
 
 interface SearchParams {
   patientRegNo?: string;
@@ -42,6 +43,7 @@ export const PatientsList: React.FC = () => {
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [isPatientRegisterModalOpen, setIsPatientRegisterModalOpen] = useState<boolean>(false);
   const [isVisitRegisterModalOpen, setIsVisitRegisterModalOpen] = useState<boolean>(false);
+  const [isPatientDetailsModalOpen, setIsPatientDetailsModalOpen] = useState<boolean>(false);
   const [totalCount, setTotalCount] = useState<number>(0); // 전체 환자 수를 저장하기 위한 상태 추가
 
   // 환자 목록 조회
@@ -89,7 +91,14 @@ export const PatientsList: React.FC = () => {
   const fetchPatientImages = async (patientInfoId: string | number) => {
     setImageLoading(true);
     try {
+      // 디버깅을 위한 로그 추가
+      console.log(`환자 이미지 조회 시작: patientInfoId=${patientInfoId}`);
+      ipcRenderer.send('console-log', `환자 이미지 조회 시작: patientInfoId=${patientInfoId}`);
+      
       const response = await patientApi.getPatientImageListByDate(patientInfoId);
+      
+      console.log('환자 이미지 조회 응답:', response);
+      ipcRenderer.send('console-log', `환자 이미지 조회 응답: ${JSON.stringify(response)}`);
       
       if (response && response.success && response.data) {
         const imagesData = response.data;
@@ -111,6 +120,8 @@ export const PatientsList: React.FC = () => {
           setSelectedImage(null);
         }
       } else {
+        console.log('환자 이미지 데이터가 없거나 형식이 올바르지 않습니다.');
+        ipcRenderer.send('console-log', '환자 이미지 데이터가 없거나 형식이 올바르지 않습니다.');
         setPatientImages({});
         setImageDates([]);
         setSelectedImageDate(null);
@@ -118,10 +129,14 @@ export const PatientsList: React.FC = () => {
       }
     } catch (err) {
       console.error('환자 이미지 조회 오류:', err);
+      ipcRenderer.send('console-log', `환자 이미지 조회 오류: ${err instanceof Error ? err.message : String(err)}`);
       setPatientImages({});
       setImageDates([]);
       setSelectedImageDate(null);
       setSelectedImage(null);
+      
+      // 오류 메시지 표시
+      setError(`환자 이미지 조회 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setImageLoading(false);
     }
@@ -138,6 +153,13 @@ export const PatientsList: React.FC = () => {
       console.error('방문 정보 조회 오류:', err);
       return [];
     }
+  };
+  
+  // 모달 닫기 핸들러
+  const handlePatientDetailsModalClose = () => {
+    setIsPatientDetailsModalOpen(false);
+    // 환자 목록 다시 조회
+    fetchPatients();
   };
 
   // 검색 폼 제출 핸들러
@@ -187,24 +209,18 @@ export const PatientsList: React.FC = () => {
 
   // 환자 선택 핸들러
   const handlePatientSelect = (patient: PatientInfo) => {
-    // 이미 선택된 환자를 다시 클릭한 경우 접기
-    if (selectedPatient?.patientInfoId === patient.patientInfoId) {
-      setSelectedPatient(null); // 선택 해제
-      // 관련 상태 초기화
-      setIsEditingPatient(false);
-      setEditedPatientData({});
-      setPatientImages({});
-      setImageDates([]);
-      setSelectedImageDate(null);
-      setSelectedImage(null);
-    } else {
-      // 새로운 환자 선택
+    try {
+      // 디버깅을 위한 로그 추가
+      console.log('환자 선택:', patient);
+      ipcRenderer.send('console-log', `환자 선택: ${JSON.stringify(patient)}`);
+      
+      // 이미 선택된 환자를 다시 클릭한 경우에도 모달 열기
       setSelectedPatient(patient);
-      setIsEditingPatient(false);
-      setEditedPatientData({});
-      if (patient.patientInfoId) {
-        fetchPatientImages(patient.patientInfoId);
-      }
+      setIsPatientDetailsModalOpen(true);
+    } catch (err) {
+      console.error('환자 선택 처리 중 오류 발생:', err);
+      ipcRenderer.send('console-log', `환자 선택 처리 중 오류 발생: ${err instanceof Error ? err.message : String(err)}`);
+      setError(`환자 선택 처리 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -765,369 +781,6 @@ export const PatientsList: React.FC = () => {
         </div>
       )}
       
-      {/* 선택한 환자 정보 및 이미지 표시 */}
-      {selectedPatient && (
-        <div className="flex flex-col gap-4">
-          {/* 환자 정보 */}
-          <div className="bg-gray-800 p-4 rounded">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">환자 정보</h2>
-              {!isEditingPatient ? (
-                <button 
-                  className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                  onClick={handleStartEditingPatient}
-                >
-                  환자 정보 수정
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button 
-                    className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                    onClick={handleSavePatientEdit}
-                  >
-                    저장
-                  </button>
-                  <button 
-                    className="px-3 py-1 bg-transparent border border-gray-400 text-gray-400 rounded-full hover:bg-white hover:bg-opacity-5 text-sm"
-                    onClick={handleCancelEditingPatient}
-                  >
-                    취소
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">번호</label>
-                {isEditingPatient ? (
-                  <div className="p-2 bg-gray-800 rounded user-select-all text-gray-300">
-                    {selectedPatient.patientInfoId}
-                  </div>
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.patientInfoId}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">이름</label>
-                {isEditingPatient ? (
-                  <input
-                    type="text"
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.patientName || ''}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, patientName: e.target.value})}
-                  />
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.patientName}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">환자번호</label>
-                {isEditingPatient ? (
-                  <input
-                    type="text"
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.patientRegNo || ''}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, patientRegNo: e.target.value})}
-                  />
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.patientRegNo}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">생년월일</label>
-                {isEditingPatient ? (
-                  <input
-                    type="date"
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={formatDateForInput(editedPatientData.patientBirthDate || '')}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, patientBirthDate: e.target.value})}
-                  />
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.patientBirthDate}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">성별</label>
-                {isEditingPatient ? (
-                  <select
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.patientGender || ''}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, patientGender: e.target.value})}
-                  >
-                    <option value="M">남성</option>
-                    <option value="F">여성</option>
-                  </select>
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.patientGender === 'M' ? '남성' : '여성'}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col">
-                <label className="text-sm mb-1">담당의사</label>
-                {isEditingPatient ? (
-                  <input
-                    type="text"
-                    className="p-2 rounded bg-gray-700 text-white border border-gray-600"
-                    value={editedPatientData.doctor || ''}
-                    onChange={(e) => setEditedPatientData({...editedPatientData, doctor: e.target.value})}
-                  />
-                ) : (
-                  <div className="p-2 bg-gray-700 rounded user-select-all">
-                    {selectedPatient.doctor || '지정되지 않음'}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* 좌측: 환자 이미지 */}
-            <div className="w-full md:w-1/2 flex flex-col bg-gray-800 p-4 rounded">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">환자 이미지</h2>
-                {!imageLoading && selectedImageDate && patientImages[selectedImageDate] && patientImages[selectedImageDate].length > 0 && (
-                  <button 
-                    className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                    onClick={() => {
-                      // 모든 이미지 다운로드 구현
-                      handleDownloadAllImages();
-                    }}
-                  >
-                    선택 일자 사진 다운로드
-                  </button>
-                )}
-              </div>
-
-              {/* 이미지 로딩 중 표시 */}
-              {imageLoading && (
-                <div className="flex justify-center items-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
-                </div>
-              )}
-              
-              {/* 촬영 일자 선택 */}
-              {!imageLoading && imageDates.length > 0 ? (
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold mb-1">촬영 일자</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {imageDates.map((date) => (
-                      <button
-                        key={date}
-                        className={`px-3 py-1 rounded ${selectedImageDate === date ? 'bg-blue-600' : 'bg-gray-600'}`}
-                        onClick={() => handleImageDateSelect(date)}
-                      >
-                        {formatDisplayDate(date)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : !imageLoading && (
-                <div className="text-gray-400 mb-4">이미지가 없습니다.</div>
-              )}
-              
-              {/* 이미지 표시 */}
-              {!imageLoading && selectedImageDate && patientImages[selectedImageDate] && (
-                <div>
-                  <h3 className="text-sm font-semibold mb-2">이미지 목록</h3>
-                  <div className="flex flex-wrap gap-2 mb-4 max-h-40 overflow-y-auto">
-                    {patientImages[selectedImageDate].map((image, idx) => (
-                      <div
-                        key={idx}
-                        className={`relative w-24 h-24 rounded overflow-hidden border-2 ${selectedImage?.imgId === image.imgId ? 'border-blue-500' : 'border-gray-500'}`}
-                        onClick={() => handleImageSelect(image)}
-                      >
-                        <img
-                          src={`${image.thumbImgPath ? `file://${image.thumbImgPath}` : ''}`}
-                          alt={`환자 이미지 ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* 대표 이미지 표시 */}
-                        {image.isRepresentative && (
-                          <div className="absolute top-0 right-0 px-1 bg-yellow-500 text-xs text-black">
-                            대표
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* 선택된 이미지 대표 표시 */}
-                  {selectedImage && (
-                    <div className="mt-2">
-                      <div className="max-w-full max-h-96 rounded overflow-hidden border-2 border-white mb-2">
-                        <img
-                          src={`${selectedImage.imgPath ? `file://${selectedImage.imgPath}` : ''}`}
-                          alt="대표 이미지"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                          onClick={handleDownloadImage}
-                        >
-                          이미지 다운로드
-                        </button>
-                        {!selectedImage.isRepresentative && (
-                          <button 
-                            className="px-3 py-1 bg-transparent border border-yellow-500 text-yellow-500 rounded-full hover:bg-yellow-500 hover:bg-opacity-10 text-sm"
-                            onClick={() => {
-                              // 대표 이미지 설정
-                              handleSetAsRepresentative();
-                            }}
-                          >
-                            대표 이미지로 설정
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* 우측: 이미지 정보 */}
-            <div className="w-full md:w-1/2 flex flex-col bg-gray-800 p-4 rounded">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">이미지 정보</h2>
-                {selectedImage && (
-                  <div className="flex gap-2">
-                    {!isEditingImageInfo ? (
-                      <button 
-                        className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                        onClick={() => {
-                          setIsEditingImageInfo(true);
-                          setEditedImageInfo({
-                            imgModality: selectedImage.imgModality,
-                            imgBodyPart: selectedImage.imgBodyPart,
-                            imgRemark: selectedImage.imgRemark
-                          });
-                        }}
-                      >
-                        이미지 정보 수정
-                      </button>
-                    ) : (
-                      <>
-                        <button 
-                          className="px-3 py-1 bg-transparent border border-white text-white rounded-full hover:bg-white hover:bg-opacity-10 text-sm"
-                          onClick={() => {
-                            handleUpdateImageInfo(editedImageInfo);
-                            setIsEditingImageInfo(false);
-                          }}
-                        >
-                          저장
-                        </button>
-                        <button 
-                          className="px-3 py-1 bg-transparent border border-gray-400 text-gray-400 rounded-full hover:bg-white hover:bg-opacity-5 text-sm"
-                          onClick={() => {
-                            setIsEditingImageInfo(false);
-                            setEditedImageInfo({});
-                          }}
-                        >
-                          취소
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              {selectedImage ? (
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold mb-1">촬영 방식</h3>
-                    {isEditingImageInfo ? (
-                      <select
-                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
-                        value={editedImageInfo.imgModality || ''}
-                        onChange={(e) => setEditedImageInfo({...editedImageInfo, imgModality: e.target.value})}
-                      >
-                        <option value="">선택하세요</option>
-                        <option value="Dermoscopy">Dermoscopy</option>
-                        <option value="DSLR">DSLR</option>
-                        <option value="우드등">우드등</option>
-                      </select>
-                    ) : (
-                      <div className="p-2 bg-gray-700 rounded">
-                        {selectedImage.imgModality || '정보 없음'}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold mb-1">부위</h3>
-                    {isEditingImageInfo ? (
-                      <select
-                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
-                        value={editedImageInfo.imgBodyPart || ''}
-                        onChange={(e) => setEditedImageInfo({...editedImageInfo, imgBodyPart: e.target.value})}
-                      >
-                        <option value="">선택하세요</option>
-                        <option value="얼굴 측면(좌)">얼굴 측면(좌)</option>
-                        <option value="얼굴 측면(우)">얼굴 측면(우)</option>
-                        <option value="얼굴 정면">얼굴 정면</option>
-                        <option value="배">배</option>
-                        <option value="손발톱">손발톱</option>
-                      </select>
-                    ) : (
-                      <div className="p-2 bg-gray-700 rounded">
-                        {selectedImage.imgBodyPart || '정보 없음'}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold mb-1">메모</h3>
-                    {isEditingImageInfo ? (
-                      <textarea
-                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
-                        rows={4}
-                        value={editedImageInfo.imgRemark || ''}
-                        onChange={(e) => setEditedImageInfo({...editedImageInfo, imgRemark: e.target.value})}
-                      />
-                    ) : (
-                      <div className="p-2 bg-gray-700 rounded min-h-[4rem] whitespace-pre-wrap">
-                        {selectedImage.imgRemark || '메모 없음'}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold mb-1">클러스터</h3>
-                    <div className="p-2 bg-gray-700 rounded">
-                      {selectedImage.imgCluster || '정보 없음'}
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold mb-1">업로드 일자</h3>
-                    <div className="p-2 bg-gray-700 rounded">
-                      {selectedImage.imgUploadDate ? formatDisplayDate(selectedImage.imgUploadDate) : '정보 없음'}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-gray-400">이미지를 선택해주세요.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      
       {/* 하단 버튼 */}
       <div className="mt-auto pt-4 flex flex-wrap justify-end gap-2">
         <button 
@@ -1158,6 +811,13 @@ export const PatientsList: React.FC = () => {
         isOpen={isVisitRegisterModalOpen}
         onClose={() => setIsVisitRegisterModalOpen(false)}
         onSuccess={fetchPatients}
+        patient={selectedPatient}
+      />
+      
+      {/* 환자 상세 정보 모달 */}
+      <PatientDetailsModal
+        isOpen={isPatientDetailsModalOpen}
+        onClose={handlePatientDetailsModalClose}
         patient={selectedPatient}
       />
     </div>

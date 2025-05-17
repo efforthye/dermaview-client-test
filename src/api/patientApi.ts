@@ -197,7 +197,8 @@ export const patientApi = {
         },
         data: {
           patientInfoId
-        }
+        },
+        timeout: 30000 // 30초 타임아웃 설정
       });
       
       ipcRenderer.send('console-log', `환자 이미지 목록 응답: ${JSON.stringify(response)}`);
@@ -206,11 +207,41 @@ export const patientApi = {
         throw new Error(response.message || '환자 이미지 목록 조회 실패');
       }
       
-      return response.data;
+      // 응답 데이터 구조 검증
+      if (!response.data || !response.data.data) {
+        ipcRenderer.send('console-log', '환자 이미지 목록 응답 데이터 형식 오류: data 또는 data.data가 없음');
+        return {
+          success: false,
+          message: '응답 데이터 형식이 올바르지 않습니다.',
+          data: {}
+        };
+      }
+      
+      // success가 false인 경우 처리
+      if (response.data.success === false) {
+        ipcRenderer.send('console-log', `API 호출 실패: ${response.data.message}`);
+        return {
+          success: false,
+          message: response.data.message || '환자 이미지 목록 조회 실패',
+          data: {}
+        };
+      }
+      
+      return {
+        success: true,
+        data: response.data.data || {} // 데이터가 없으면 빈 객체 반환
+      };
     } catch (error) {
       console.error('환자 이미지 목록 조회 오류:', error);
       ipcRenderer.send('console-log', `환자 이미지 목록 조회 오류: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
+      
+      // 자세한 오류 정보 반환
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '환자 이미지 목록 조회 중 오류가 발생했습니다.',
+        error: error,
+        data: {}
+      };
     }
   }
 };
